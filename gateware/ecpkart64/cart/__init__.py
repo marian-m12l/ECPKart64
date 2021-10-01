@@ -18,79 +18,80 @@ class N64Cart(Module, AutoCSR):
     def __init__(self, pads, sdram_port, sdram_wait, fast_cd="sys2x"):
         self.pads = pads
 
-        self.logger_idx = CSRStatus(32, description="Logger index")
-        self.logger_threshold = CSRStorage(32, reset=6, description="Logger threshold")
+        #self.logger_idx = CSRStatus(32, description="Logger index")
+        #self.logger_threshold = CSRStorage(32, reset=6, description="Logger threshold")
         self.rom_header = CSRStorage(32, description="ROM Header (first word)")
 
         # Logging wishbone memory area
-        logger_words = 4096
-        logger = Memory(width=32, depth=logger_words)
-        logger_wr = logger.get_port(write_capable=True)
-        logger_rd = logger.get_port(write_capable=False)
-        self.specials += logger, logger_wr, logger_rd
+        #logger_words = 4096
+        #logger = Memory(width=32, depth=logger_words)
+        #logger_wr = logger.get_port(write_capable=True)
+        #logger_rd = logger.get_port(write_capable=False)
+        #self.specials += logger, logger_wr, logger_rd
 
         # Wishbone slave interface
-        self.wb_slave = wb_slave = wishbone.Interface()
+        #self.wb_slave = wb_slave = wishbone.Interface()
 
         # Acknowledge immediately
-        self.sync += [
-            wb_slave.ack.eq(0),
-            If (wb_slave.cyc & wb_slave.stb & ~wb_slave.ack, wb_slave.ack.eq(1))
-        ]
+        #self.sync += [
+        #    wb_slave.ack.eq(0),
+        #    If (wb_slave.cyc & wb_slave.stb & ~wb_slave.ack, wb_slave.ack.eq(1))
+        #]
 
         # Sample the write index from the fast domain
-        self.specials += MultiReg(logger_wr.adr, self.logger_idx.status)
+        #self.specials += MultiReg(logger_wr.adr, self.logger_idx.status)
 
-        self.comb += [
-            logger_rd.adr.eq(wb_slave.adr),
-            wb_slave.dat_r.eq(logger_rd.dat_r)
-        ]
+        #self.comb += [
+        #    logger_rd.adr.eq(wb_slave.adr),
+        #    wb_slave.dat_r.eq(logger_rd.dat_r)
+        #]
 
         self.submodules.n64cartbus = N64CartBus(
             pads,
             sdram_port,
             sdram_wait,
-            logger_wr,
-            logger_words,
-            self.logger_threshold.storage,
+            #logger_wr,
+            #logger_words,
+            #self.logger_threshold.storage,
             self.rom_header
         )
 
 
-class TestImageGenerator(Module):
-    def __init__(self, addr, data, active):
-        self.frame = frame = Signal(16)
-        self.speed = 1
+#class TestImageGenerator(Module):
+#    def __init__(self, addr, data, active):
+#        self.frame = frame = Signal(16)
+#        self.speed = 1
 
         # Hard code for 512 x 256
 
-        h_ctr = addr[:9]
-        v_ctr = addr[9:]
+#        h_ctr = addr[:9]
+#        v_ctr = addr[9:]
 
-        r = Signal(8)
-        g = Signal(8)
-        b = Signal(8)
+#        r = Signal(8)
+#        g = Signal(8)
+#        b = Signal(8)
 
-        self.sync += If((addr == 0) & active, frame.eq(frame + 1))
+#        self.sync += If((addr == 0) & active, frame.eq(frame + 1))
 
-        frame_tri = Mux(frame[8], ~frame[:8], frame[:8])
-        frame_tri2 = Mux(frame[9], ~frame[1:9], frame[1:9])
+#        frame_tri = Mux(frame[8], ~frame[:8], frame[:8])
+#        frame_tri2 = Mux(frame[9], ~frame[1:9], frame[1:9])
 
-        X = Mux(v_ctr[6], h_ctr + frame[self.speed:], h_ctr - frame[self.speed:])
-        Y = v_ctr
+#        X = Mux(v_ctr[6], h_ctr + frame[self.speed:], h_ctr - frame[self.speed:])
+#        Y = v_ctr
 
-        self.comb += [
-            r.eq(frame_tri[1:]),
-            g.eq(v_ctr * Mux(X & Y, 255, 0)),
-            b.eq(~(frame_tri2 + (X ^ Y)) * 255),
-        ]
+#        self.comb += [
+#            r.eq(frame_tri[1:]),
+#            g.eq(v_ctr * Mux(X & Y, 255, 0)),
+#            b.eq(~(frame_tri2 + (X ^ Y)) * 255),
+#        ]
 
-        self.comb += data.eq(Cat(1, b[-5:], g[-5:], r[-5:]))
+#        self.comb += data.eq(Cat(1, b[-5:], g[-5:], r[-5:]))
 
 
 
 class N64CartBus(Module):
-    def __init__(self, pads, sdram_port, sdram_wait, logger_wr, logger_words, logger_threshold, rom_header_csr):
+    def __init__(self, pads, sdram_port, sdram_wait, #logger_wr, logger_words, logger_threshold, 
+                    rom_header_csr):
         self.pads = pads
 
         self.cold_reset = n64_cold_reset = Signal()
@@ -124,8 +125,8 @@ class N64CartBus(Module):
         self.sync += n64_ad_in_r.eq(n64_ad_in)
 
         # Handle bus access
-        n64_addr_l = Signal(16)
-        n64_addr_h = Signal(16)
+        self.n64_addr_l = n64_addr_l = Signal(16)
+        self.n64_addr_h = n64_addr_h = Signal(16)
         self.n64_addr = n64_addr = Signal(32)
 
         # Memory area selectors
@@ -147,12 +148,23 @@ class N64CartBus(Module):
 
         # SDRAM direct port
         self.sdram_port = sdram_port
-        sdram_data   = Signal(16)
-        n64_ad_out_r = Signal(16)
+        self.sdram_data = sdram_data   = Signal(16)
+        self.n64_ad_out_r = n64_ad_out_r = Signal(16)
 
         self.comb += [
             # 16 bit
-            sdram_port.cmd.addr.eq(n64_addr[1:27]),
+            # FIXME Wrong RAM addresses???
+            #    0x10000040 --> 0x0000020 --> 0x4000004c --> Should be 0x0000026 (0b 0010 0110) --> n64_addr[1], ~n64_addr[2:3], n64_addr[4:27]
+            #    0x10000042 --> 0x0000021 --> 0x4000004e --> Should be 0x0000027 (0b 0010 0111)
+            #    0x10000044 --> 0x0000022 --> 0x40000048 --> Should be 0x0000024 (0b 0010 0100)
+            #    0x10000046 --> 0x0000023 --> 0x4000004a --> Should be 0x0000025 (0b 0010 0101)
+            #    0x10000048 --> 0x0000024 --> 0x40000044 --> Should be 0x0000022 (0b 0010 0010)
+            #    0x1000004a --> 0x0000025 --> 0x40000046 --> Should be 0x0000023 (0b 0010 0011)
+            #    0x1000004c --> 0x0000026 --> 0x40000040 --> Should be 0x0000020 (0b 0010 0000)
+            #    0x1000004e --> 0x0000027 --> 0x40000042 --> Should be 0x0000021 (0b 0010 0001)
+            
+            #sdram_port.cmd.addr.eq(n64_addr[1:27]),
+            sdram_port.cmd.addr.eq(Cat(n64_addr[1], ~n64_addr[2:4], n64_addr[4:27])),
 
             # 32 bit
             # sdram_port.cmd.addr.eq(n64_addr[2:27]),
@@ -194,16 +206,16 @@ class N64CartBus(Module):
         self.read_active = n64_read_active = Signal()
 
         counter = Signal(32)
-        self.sync += logger_wr.dat_w.eq(counter)
+        #self.sync += logger_wr.dat_w.eq(counter)
         # self.comb += logger_wr.dat_w.eq(n64_addr)
-        self.sync += If(logger_wr.we, logger_wr.we.eq(0))
+        #self.sync += If(logger_wr.we, logger_wr.we.eq(0))
 
         # ------- Custom data generator
         custom_sel_stb = Signal()
         self.sync += custom_sel_stb.eq(0)
         self.custom_data = custom_data = Signal(16)
         self.custom_addr = custom_addr = n64_addr[1:25] # 16M 16-bit words
-        self.submodules += TestImageGenerator(custom_addr, custom_data, custom_sel_stb)
+        #self.submodules += TestImageGenerator(custom_addr, custom_data, custom_sel_stb)
 
         self.sync += \
         If(sdram_sel,
@@ -286,20 +298,25 @@ class N64CartBus(Module):
                     n64_ad_oe.eq(1),
                 ),
 
+                # TODO Could enable read command immediately, and only output sdram_data when (and if) read goes low ??? (but address must not be overwritten if output already enabled !!!)
+
                 # Read access starts
                 If(~n64_read,
                     # Enable the read command
+                    # Delay between valid command and sdram result output to address bus: around 24 sys clock ticks @ 60MHz ~= 400ns
                     sdram_port.cmd.valid.eq(1),
                     NextValue(counter, counter + 1),
 
                     # Go to next state when we get the ack
-                    If(sdram_port.cmd.ready & sdram_port.rdata.valid,
+                    # FIXME cmd.valid instead of cmd.ready (which goes low before rdata.valid goes high!)
+                    #If(sdram_port.cmd.ready & sdram_port.rdata.valid,
+                    If(sdram_port.cmd.valid & sdram_port.rdata.valid,
                         # Log number of cycles it took to access data
                         NextValue(counter, 0),
-                        If(counter > logger_threshold, # Longer than 14 cycles (280ns) is game over with 0x1240 config
-                            NextValue(logger_wr.we, 1),
-                            NextValue(logger_wr.adr, logger_wr.adr + 1),
-                        ),
+                        #If(counter > logger_threshold, # Longer than 14 cycles (280ns) is game over with 0x1240 config
+                        #    NextValue(logger_wr.we, 1),
+                        #    NextValue(logger_wr.adr, logger_wr.adr + 1),
+                        #),
 
                         NextValue(n64_read_active, 1),
                         NextState("WAIT_READ_H"),

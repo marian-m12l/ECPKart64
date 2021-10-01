@@ -34,7 +34,7 @@ Data Line, Bidir (DIO):  CIC Pin 15
 
 #include "cic.h"
 
-// #define DEBUG
+#define DEBUG
 
 // #define INFO(...)
 #define INFO(...) printf("\e[92;1mCIC> \e[0m" __VA_ARGS__)
@@ -525,6 +525,7 @@ static void cic_run(void)
             return;
         }
     }
+    INFO("Let's-a-go!\n");
 
     // read the region setting
     isPal = GET_REGION();
@@ -586,6 +587,7 @@ static void cic_run(void)
 
 void main_cic(void)
 {
+    INFO("Starting CIC.\n");
     do {
         cic_run();
     } while(exit_by_uart == 0);

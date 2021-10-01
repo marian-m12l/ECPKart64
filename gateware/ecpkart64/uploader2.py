@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument("--csr-csv", default="csr.csv", help="SoC CSV file")
     parser.add_argument("--file", default="bootrom.z64", help="z64 ROM file")
     parser.add_argument("--port", default="/dev/ttyUSB1", help="port")
-    parser.add_argument("--baudrate", default="1000000", help="baud")
+    parser.add_argument("--baudrate", default="115200", help="baud")
     parser.add_argument("--header", type=lambda x: int(x, 0), default=0x80371240, help="Override the first word of the ROM")
     parser.add_argument("--cic", action="store_true", help="Starts the CIC app after upload")
     args = parser.parse_args()
@@ -42,6 +42,8 @@ def main():
 
     try:
         with open(args.file, "rb") as f:
+            # TODO Limit length to 8MB - 16K (for firmware)
+            # TODO Send in chunks to display progress
             data_bytes = f.read()
             port.write(bytes(f"\n\nmem_load {hex(base)} {len(data_bytes)}\n".encode("utf-8")))
             port.write(data_bytes)

@@ -1,4 +1,4 @@
-TARGET    ?= kilsyth
+TARGET    ?= colorlight_i5
 BUILD_DIR ?= build/$(TARGET)
 
 PYTHON3      ?= /usr/bin/env python3
@@ -6,9 +6,10 @@ LXTERM       ?= lxterm
 LITEX_SERVER ?= litex_server
 ECHO         ?= echo
 
-UARTBONE_TTY ?= /dev/ttyUSB0
-UART_TTY     ?= /dev/ttyUSB1
-UART_BAUD    ?= 1000000
+UARTBONE_TTY ?= /dev/ttyACM1
+UARTBONE_BAUD ?= 115200
+UART_TTY     ?= /dev/ttyACM0
+UART_BAUD    ?= 115200
 
 
 # To enable verbose, append VERBOSE=1 to make, e.g.:
@@ -46,7 +47,7 @@ lxterm: $(BUILD_DIR)/software/app/app.bin
 	$(LXTERM) $(UART_TTY) --kernel=$(BUILD_DIR)/software/app/app.bin --kernel-adr=0x20000000 --speed $(UART_BAUD)
 
 litex_server:
-	$(LITEX_SERVER) --uart --uart-port $(UARTBONE_TTY) --uart-baudrate $(UART_BAUD)
+	$(LITEX_SERVER) --uart --uart-port $(UARTBONE_TTY) --uart-baudrate $(UARTBONE_BAUD)
 
 litescope:
 	litescope_cli -v main_analyzer_fsm0_state 3

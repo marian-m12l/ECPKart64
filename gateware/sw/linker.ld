@@ -7,6 +7,19 @@ INCLUDE generated/regions.ld
 
 SECTIONS
 {
+	/* Firmware is located in the last 0x4000 bytes of main_ram section */
+	_main_ram_end_ = ORIGIN(main_ram) + LENGTH(main_ram) -1 ;
+	_firmware_offset = LENGTH(main_ram) - 0x4000 ;
+
+
+	.reserved :
+	{
+		_reserved_start = .;
+		. = . + _firmware_offset;
+		. = ALIGN(8);
+		_reserved_end = .;
+	} > main_ram
+
 	.text :
 	{
 		_ftext = .;
@@ -18,7 +31,7 @@ SECTIONS
 
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 		_etext = .;
-	} > firmware_ram
+	} > main_ram
 
 	.rodata :
 	{
@@ -28,7 +41,7 @@ SECTIONS
 		*(.rodata1)
 		. = ALIGN(8);
 		_erodata = .;
-	} > firmware_ram
+	} > main_ram
 
 	.data :
 	{
@@ -40,7 +53,7 @@ SECTIONS
 		*(.sdata .sdata.* .gnu.linkonce.s.*)
 		. = ALIGN(8);
 		_edata = .;
-	} > firmware_ram
+	} > main_ram
 
 	.bss :
 	{

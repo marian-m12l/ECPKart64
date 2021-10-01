@@ -1,9 +1,9 @@
-TARGET    ?= kilsyth
+TARGET    ?= colorlight_i5
 BUILD_DIR ?= ../../build/$(TARGET)
 APP_DIR   ?= $(BUILD_DIR)/software/app
 
 # TTY for loading the application
-TTYDEV    ?= /dev/ttyUSB0
+TTYDEV    ?= /dev/ttyACM0
 
 # Tools
 ECHO      ?= echo
@@ -61,7 +61,7 @@ $(APP_DIR)/%.o: %.S Makefile | $(APP_DIR)
 	$(V)$(assemble)
 
 load: $(APP_DIR)/app.bin
-	$(V)$(LXTERM) $(TTYDEV) --serial-boot --kernel=$(APP_DIR)/app.bin
+	$(V)$(LXTERM) $(TTYDEV) --serial-boot --kernel=$(APP_DIR)/app.bin --kernel-adr 0x407fc000
 
 clean:
 	$(V)$(ECHO) [ RM ] $(APP_DIR)
