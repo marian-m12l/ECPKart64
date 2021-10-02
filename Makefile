@@ -9,7 +9,7 @@ ECHO         ?= echo
 UARTBONE_TTY ?= /dev/ttyACM1
 UARTBONE_BAUD ?= 115200
 UART_TTY     ?= /dev/ttyACM0
-UART_BAUD    ?= 115200
+UART_BAUD    ?= 460800
 
 
 # To enable verbose, append VERBOSE=1 to make, e.g.:

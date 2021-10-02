@@ -30,14 +30,15 @@ litex> reboot
 Exit litex and upload a z64 ROM (and set a slower bus speed with header 0x80374040):
 
 ```
-python3 gateware/ecpkart64/uploader2.py --port /dev/ttyACM0 --baudrate 115200 --header 0x80374040 --file rom.z64
+python3 gateware/ecpkart64/uploader2.py --port /dev/ttyACM0 --file rom.z64
 ```
 
 
-Connect to litex and start CIC:
+Connect to litex, set slower bus speed with header 0x80374040  and start CIC:
 
 ```
-lxterm /dev/ttyACM0
+lxterm /dev/ttyACM0 --speed 460800
+litex> set_header 0x80374040
 litex> cic
 ```
 

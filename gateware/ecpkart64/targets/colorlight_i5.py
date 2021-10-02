@@ -116,7 +116,7 @@ class BaseSoC(SoCCore):
         SoCCore.__init__(self, platform, int(sys_clk_freq),
             ident          = "LiteX SoC on Colorlight " + board.upper(),
             ident_version  = True,
-            #uart_baudrate  = 1000000,   # FIXME Higher baudrate?
+            uart_baudrate  = 460800,
             **kwargs)
 
         # CRG --------------------------------------------------------------------------------------

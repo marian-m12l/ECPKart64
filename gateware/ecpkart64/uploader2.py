@@ -13,12 +13,18 @@ from struct import unpack
 from litex import RemoteClient
 import serial
 
+
+SDRAM_SIZE = 8*1024*1024
+FIRMWARE_RESERVED_MEMORY = 16*1024
+CHUNK_SIZE = 16*1024
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="""ECPKart64 Dump Utility""")
     parser.add_argument("--csr-csv", default="csr.csv", help="SoC CSV file")
     parser.add_argument("--file", default="bootrom.z64", help="z64 ROM file")
     parser.add_argument("--port", default="/dev/ttyUSB1", help="port")
-    parser.add_argument("--baudrate", default="115200", help="baud")
+    parser.add_argument("--baudrate", default="460800", help="baud")
     parser.add_argument("--header", type=lambda x: int(x, 0), default=0x80371240, help="Override the first word of the ROM")
     parser.add_argument("--cic", action="store_true", help="Starts the CIC app after upload")
     args = parser.parse_args()
@@ -42,13 +48,30 @@ def main():
 
     try:
         with open(args.file, "rb") as f:
-            # TODO Limit length to 8MB - 16K (for firmware)
-            # TODO Send in chunks to display progress
             data_bytes = f.read()
-            port.write(bytes(f"\n\nmem_load {hex(base)} {len(data_bytes)}\n".encode("utf-8")))
-            port.write(data_bytes)
+            totalSize = len(data_bytes)
+
+            # Make sure ROM fits in available SDRAM memory
+            if totalSize > (SDRAM_SIZE - FIRMWARE_RESERVED_MEMORY):
+                raise ValueError("ROM is too big ({} bytes).".format(totalSize))
+
+            port.write(bytes(f"\n\nmem_load {hex(base)} {totalSize}\n".encode("utf-8")))
+
+            # Send in chunks to display progress
+            chunks = [data_bytes[i:i+CHUNK_SIZE] for i in range(0, totalSize, CHUNK_SIZE)]
+            print("Sending {} chunks of {} bytes (or less)".format(len(chunks), CHUNK_SIZE))
+            sent = 0
+            width = len(str(totalSize))
+            for chunk in chunks:
+                port.write(chunk)
+                sent = sent + len(chunk)
+                percent = sent*100 / totalSize
+                print(f"\rSent: {sent:>{width}} / {totalSize} [{percent:>6.2f}%]", end='')
+            print("\nDone.\nSetting ROM header: {}".format(hex(args.header)))
+
             port.write(bytes(f"set_header {hex(args.header)}\n".encode("utf-8")))
             if args.cic:
+                print("Starting CIC")
                 port.write(bytes(f"cic\n".encode("utf-8")))
             f.close()
 
