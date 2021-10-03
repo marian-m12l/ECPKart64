@@ -298,13 +298,16 @@ class N64CartBus(Module):
                     n64_ad_oe.eq(1),
                 ),
 
-                # TODO Could enable read command immediately, and only output sdram_data when (and if) read goes low ??? (but address must not be overwritten if output already enabled !!!)
+                # Enable the read command immediately. Is read never goes low, output won't be changed anyway.
+                # Delay between valid command and sdram result output to address bus: around 24 sys clock ticks @ 60MHz ~= 400ns
+                sdram_port.cmd.valid.eq(1),
+                #NextValue(counter, counter + 1),
 
                 # Read access starts
                 If(~n64_read,
                     # Enable the read command
                     # Delay between valid command and sdram result output to address bus: around 24 sys clock ticks @ 60MHz ~= 400ns
-                    sdram_port.cmd.valid.eq(1),
+                    #sdram_port.cmd.valid.eq(1),
                     NextValue(counter, counter + 1),
 
                     # Go to next state when we get the ack

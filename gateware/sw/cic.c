@@ -551,6 +551,8 @@ static void cic_run(void)
     _CicMem[0x01] = ReadNibble();
     _CicMem[0x11] = ReadNibble();
 
+    INFO("Entering loop\n");
+
     while(check_running())
     {
         // read mode (2 bit)

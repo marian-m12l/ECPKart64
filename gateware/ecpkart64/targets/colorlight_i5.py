@@ -227,6 +227,7 @@ def main():
     parser = argparse.ArgumentParser(description="LiteX SoC on Colorlight i5")
     parser.add_argument("--build",            action="store_true",      help="Build bitstream")
     parser.add_argument("--load",             action="store_true",      help="Load bitstream")
+    parser.add_argument("--flash",            action="store_true",      help="Flash bitstream")
     parser.add_argument("--board",            default="i5",         help="Board type: i5 (default)")
     parser.add_argument("--revision",         default="7.0", type=str,  help="Board revision: 7.0 (default)")
     parser.add_argument("--sys-clk-freq",     default=60e6,             help="System clock frequency (default: 60MHz)")
@@ -276,6 +277,9 @@ def main():
     if args.load:
         prog = soc.platform.create_programmer()
         prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".bit"))
+    elif args.flash:
+        prog = soc.platform.create_programmer()
+        prog.flash(0x00000000, os.path.join(builder.gateware_dir, soc.build_name + ".bit"))
 
 if __name__ == "__main__":
     main()
